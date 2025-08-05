@@ -1,0 +1,54 @@
+# GitHub Action to build tar.gz file of the Dreambox NodeJs driver
+---
+name: "Build & Release"
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+*
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+env:
+  INTG_NAME: dreambox
+  HASH_FILENAME: uc-src.hash
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Determine version
+        run: |
+          echo VERSION="v$(jq .version -r driver.json)" >> $GITHUB_ENV
+
+      - name: Verify driver.json version for release build
+        if: contains(github.ref, 'tags/v')
+        run: |
+          DRIVER_VERSION="v$(jq .version -r driver.json)"
+          if [ "${{ env.VERSION }}" != "$DRIVER_VERSION" ]; then
+            echo "Version in driver.json ($DRIVER_VERSION) doesn't match git version tag (${{ env.VERSION }})!"
+            exit 1
+          fi
+
+      - name: Run build inside Docker (Node v20.16)
+        run: |
+          docker run --rm \
+            -v "$PWD":/app \
+            -w /app \
+            node:20.16 \
+            bash -c "./buildTar.sh"
+          
+      - name: Create new release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.VERSION }}
+          name: Release ${{ env.VERSION }}
+          files: dist/integration-dreambox-${{ env.VERSION }}.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
