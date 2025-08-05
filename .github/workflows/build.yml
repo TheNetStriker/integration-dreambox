@@ -42,7 +42,7 @@ jobs:
             -v "$PWD":/app \
             -w /app \
             node:20.16 \
-            bash -c "./buildTar.sh"
+            bash -c "npm install -g typescript && ./buildTar.sh"
           
       - name: Create new release
         uses: softprops/action-gh-release@v2
