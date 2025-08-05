@@ -11,9 +11,8 @@ on:
     branches: [main]
     types: [opened, synchronize, reopened]
 
-env:
-  INTG_NAME: dreambox
-  HASH_FILENAME: uc-src.hash
+permissions:
+  contents: write
 
 jobs:
   build-and-release:
@@ -42,7 +41,7 @@ jobs:
             -v "$PWD":/app \
             -w /app \
             node:20.16 \
-            bash -c "apt-get update && apt-get install -y jq && npm install -g typescript && ./buildTar.sh"
+            bash -c "apt-get update && apt-get install -y jq && npm install -g typescript && npm install && ./buildTar.sh"
           
       - name: Create new release
         uses: softprops/action-gh-release@v2
