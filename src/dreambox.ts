@@ -46,6 +46,18 @@ const RC_DREAMBOX_MAP: Record<string, number> = {
   RECORD: 167
 };
 
+class DreamboxInfoResult {
+  name: string;
+  macAddress: string;
+  entityId: string;
+
+  constructor(name: string, macAddress: string) {
+    this.name = name;
+    this.macAddress = macAddress;
+    this.entityId = `remote-${macAddress.replaceAll(":", "")}`;
+  }
+}
+
 class DreamboxCommandResult<EntityStateType> {
   entityId: string;
   entityStateType: string;
@@ -66,6 +78,35 @@ class DreamboxCommandResult<EntityStateType> {
     this.entityState = entityState;
     this.error = error;
   }
+}
+
+async function getDreamboxInfo(deviceAddress: string): Promise<DreamboxInfoResult> {
+  const url = `http://${deviceAddress}/web/deviceinfo`;
+  const options = {
+    method: "GET",
+    headers: {
+      Accept: "application/xml"
+    }
+  };
+  return new Promise(function (resolve, reject) {
+    fetch(url, options)
+      .then(async (response) => {
+        if (response.status == 200) {
+          const responseText = await response.text();
+          const xmlParser = new XMLParser();
+          const xmlData = xmlParser.parse(responseText);
+          const deviceName = xmlData["e2deviceinfo"]["e2devicename"];
+          const macAddress = xmlData["e2deviceinfo"]["e2network"]["e2interface"]["e2mac"];
+
+          resolve(new DreamboxInfoResult(deviceName, macAddress));
+        } else {
+          reject(`Response code ${response.status}`);
+        }
+      })
+      .catch((error) => {
+        reject(`Response error ${error}`);
+      });
+  });
 }
 
 async function getDreamboxPromise<StateType>(
@@ -237,7 +278,9 @@ const getDownmixState = async function (
 
 export {
   RC_DREAMBOX_MAP,
+  DreamboxInfoResult,
   DreamboxCommandResult,
+  getDreamboxInfo,
   sendRemoteCommand,
   sendPowerState,
   getPowerState,

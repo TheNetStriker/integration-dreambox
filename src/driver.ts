@@ -1,7 +1,7 @@
 import * as uc from "@unfoldedcircle/integration-api";
 import { Entities } from "@unfoldedcircle/integration-api/dist/mjs/lib/entities/entities.js";
 
-import * as pages from "./pages.js"
+import * as pages from "./pages.js";
 import * as dreambox from "./dreambox.js";
 import * as config from "./config.js";
 import { driverSetupHandler } from "./setup_flow.js";
@@ -119,43 +119,6 @@ const remoteCmdHandler: uc.CommandHandler = async function (
   return processDreamboxCommandResult(result);
 };
 
-/**
- * Dreambox downmix command handler.
- *
- * Called by the integration-API if a command is sent to a configured entity.
- *
- * @param entity button entity
- * @param cmdId command
- * @param params optional command parameters
- * @return status of the command
- */
-const downmixCmdHandler: uc.CommandHandler = async function (
-  entity: uc.Entity,
-  cmdId: string,
-  params?: {
-    [key: string]: string | number | boolean;
-  }
-): Promise<uc.StatusCodes> {
-  let device = configuredDevices.get(entity.id.replace("_downmix", ""));
-  let result: dreambox.DreamboxCommandResult<uc.SwitchStates | undefined> | null = null;
-
-  if (device) {
-    switch (cmdId) {
-      case uc.RemoteCommands.On:
-      case uc.RemoteCommands.Off:
-        result = await dreambox.sendDownmixState(device, cmdId);
-        break;
-      case uc.RemoteCommands.Toggle:
-        result = await dreambox.sendDownmixState(device, cmdId);
-        break;
-      default:
-        console.error(`Unsupported command: ${cmdId}`);
-    }
-  }
-
-  return processDreamboxCommandResult(result);
-};
-
 const supportedCommands = Object.keys(dreambox.RC_DREAMBOX_MAP);
 
 supportedCommands.push("DOWNMIX_ON");
@@ -191,7 +154,7 @@ const createUi = () => {
   return [pages.MAIN_PAGE, pages.KEYPAD_PAGE];
 };
 
-async function _addConfiguredDevice(device: config.DreamboxDevice) {
+async function addConfiguredDevice(device: config.DreamboxDevice) {
   configuredDevices.set(device.id, device);
 
   let remoteState = uc.RemoteStates.Unknown;
@@ -224,7 +187,7 @@ async function _addConfiguredDevice(device: config.DreamboxDevice) {
 function onDeviceAdded(device: config.DreamboxDevice | null) {
   if (device) {
     console.debug("New device added:", JSON.stringify(device));
-    _addConfiguredDevice(device);
+    addConfiguredDevice(device);
   }
 }
 
@@ -232,7 +195,21 @@ function onDeviceAdded(device: config.DreamboxDevice | null) {
  * Handle a removed device in the configuration.
  * @param {DreamboxDevice} device
  */
-function onDeviceRemoved(device: config.DreamboxDevice | null) {}
+function onDeviceRemoved(device: config.DreamboxDevice | null) {
+  /** Handle a removed device in the configuration. */
+  if (device === null) {
+    console.debug("Configuration cleared, disconnecting & removing all configured AVR instances");
+    configuredDevices.clear();
+    driver.clearConfiguredEntities();
+    driver.clearAvailableEntities();
+  } else {
+    if (configuredDevices.has(device.id)) {
+      configuredDevices.delete(device.id);
+      driver.getConfiguredEntities().removeEntity(device.id);
+      driver.getAvailableEntities().removeEntity(device.id);
+    }
+  }
+}
 
 async function refreshEntityState(entities: Entities, device: config.DreamboxDevice, entityId: string) {
   let entityState = entities.getEntity(entityId)?.attributes?.state;
@@ -263,7 +240,7 @@ async function main() {
   config.devices.init(dataDirPath, onDeviceAdded, onDeviceRemoved);
 
   config.devices.all().forEach((device) => {
-    _addConfiguredDevice(device);
+    addConfiguredDevice(device);
   });
 
   driver.init("driver.json", driverSetupHandler);

@@ -1,6 +1,6 @@
 {
   "driver_id": "dreambox_driver",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "min_core_api": "0.20.0",
   "name": { "en": "Dreambox", "de": "Dreambox" },
   "icon": "uc:integration",
@@ -16,22 +16,25 @@
     "url": "https://www.github.com/TheNetStriker"
   },
   "home_page": "https://www.github.com/TheNetStriker/integration-dreambox",
-  "release_date": "2025-05-08",
+  "release_date": "2025-08-11",
   "setup_data_schema": {
     "title": {
-      "en": "Dreambox settings",
-      "de": "Dreambox Konfiguration"
+      "en": "Integration setup",
+      "de": "Integrationssetup"
     },
     "settings": [
       {
-        "id": "address",
+        "id": "info",
         "label": {
-          "en": "Dreambox IP address",
-          "de": "Dreambox IP Adresse"
+          "en": "Setup process",
+          "de": "Setup Modus"
         },
         "field": {
-          "text": {
-            "value": ""
+          "label": {
+            "value": {
+              "en": "Integration setup for Dreambox",
+              "de": "Integrationssetup für Dreambox"
+            }
           }
         }
       }
