@@ -66,6 +66,21 @@ function processDreamboxCommandResult(result: dreambox.DreamboxCommandResult<any
   return uc.StatusCodes.NotFound;
 }
 
+function remoteSendCommand(
+  device: config.DreamboxDevice,
+  command: string
+): Promise<dreambox.DreamboxCommandResult<any>> {
+  if (command == "DOWNMIX_ON") {
+    return dreambox.sendDownmixState(device, uc.RemoteCommands.On);
+  } else if (command == "DOWNMIX_OFF") {
+    return dreambox.sendDownmixState(device, uc.RemoteCommands.Off);
+  } else if (command == "DOWNMIX_TOGGLE") {
+    return dreambox.sendDownmixState(device, uc.RemoteCommands.Toggle);
+  } else {
+    return dreambox.sendRemoteCommand(device, dreambox.RC_DREAMBOX_MAP[command]);
+  }
+}
+
 /**
  * Dreambox remote command handler.
  *
@@ -80,7 +95,7 @@ const remoteCmdHandler: uc.CommandHandler = async function (
   entity: uc.Entity,
   cmdId: string,
   params?: {
-    [key: string]: string | number | boolean;
+    [key: string]: string | number | boolean | string[];
   }
 ): Promise<uc.StatusCodes> {
   let device = configuredDevices.get(entity.id);
@@ -97,17 +112,28 @@ const remoteCmdHandler: uc.CommandHandler = async function (
         break;
       case uc.RemoteCommands.SendCmd: {
         if (params && typeof params.command === "string") {
-          if (params.command == "DOWNMIX_ON") {
-            result = await dreambox.sendDownmixState(device, uc.RemoteCommands.On);
-          } else if (params.command == "DOWNMIX_OFF") {
-            result = await dreambox.sendDownmixState(device, uc.RemoteCommands.Off);
-          } else if (params.command == "DOWNMIX_TOGGLE") {
-            result = await dreambox.sendDownmixState(device, uc.RemoteCommands.Toggle);
-          } else {
-            result = await dreambox.sendRemoteCommand(device, dreambox.RC_DREAMBOX_MAP[params.command]);
-          }
+          result = await remoteSendCommand(device, params.command);
         } else {
           console.error("Command argument missing.");
+        }
+        break;
+      }
+      case uc.RemoteCommands.SendCmdSequence: {
+        if (params && Array.isArray(params.sequence) && typeof params.delay === "number") {
+          // const seqRepeat = params.repeat || 1;
+          const seqDelay = params.delay || 0;
+
+          for (const command of params.sequence) {
+            result = await remoteSendCommand(device, command);
+
+            if (result.statusCode != uc.StatusCodes.Ok) {
+              return processDreamboxCommandResult(result);
+            }
+
+            await new Promise((resolve) => setTimeout(resolve, seqDelay));
+          }
+        } else {
+          console.error("Command sequence argument missing.");
         }
         break;
       }
