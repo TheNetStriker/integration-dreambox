@@ -8,7 +8,6 @@
     "en": "Dreambox Integration",
     "de": "Dreambox Integration"
   },
-  "driver_url": "ws://172.17.128.206:9988",
   "port": "9988",
   "developer": {
     "name": "David Masshardt",

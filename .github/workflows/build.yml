@@ -4,12 +4,8 @@ name: "Build & Release"
 
 on:
   push:
-    branches: [main]
     tags:
       - v[0-9]+.[0-9]+.[0-9]+*
-  pull_request:
-    branches: [main]
-    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
@@ -42,7 +38,7 @@ jobs:
             -w /app \
             node:20.16 \
             bash -c "apt-get update && apt-get install -y jq && npm install -g typescript && npm install && ./buildTar.sh"
-          
+
       - name: Create new release
         uses: softprops/action-gh-release@v2
         with:

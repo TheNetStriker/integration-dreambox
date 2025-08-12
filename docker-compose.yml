@@ -1,0 +1,9 @@
+services:
+  dreambox-integration:
+    image: dreambox-integration
+    build: ./
+    container_name: dreambox-integration
+    restart: unless-stopped
+    network_mode: host  # Required for network discovery and magic packets
+    volumes:
+      - ./data:/app/data
