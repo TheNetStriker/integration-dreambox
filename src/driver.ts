@@ -112,7 +112,11 @@ const remoteCmdHandler: uc.CommandHandler = async function (
         break;
       case uc.RemoteCommands.SendCmd: {
         if (params && typeof params.command === "string") {
-          result = await remoteSendCommand(device, params.command);
+          const repeat: number = Number(params.repeat) || 1;
+
+          for (let i = 0; i < repeat; i++) {
+            result = await remoteSendCommand(device, params.command);
+          }
         } else {
           console.error("Command argument missing.");
         }

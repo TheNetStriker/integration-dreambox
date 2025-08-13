@@ -1,6 +1,6 @@
 {
   "driver_id": "dreambox_driver",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "min_core_api": "0.20.0",
   "name": { "en": "Dreambox", "de": "Dreambox" },
   "icon": "uc:integration",
@@ -15,7 +15,7 @@
     "url": "https://www.github.com/TheNetStriker"
   },
   "home_page": "https://www.github.com/TheNetStriker/integration-dreambox",
-  "release_date": "2025-08-11",
+  "release_date": "2025-08-13",
   "setup_data_schema": {
     "title": {
       "en": "Integration setup",
