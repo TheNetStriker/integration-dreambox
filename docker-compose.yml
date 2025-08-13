@@ -6,4 +6,8 @@ services:
     restart: unless-stopped
     network_mode: host  # Required for network discovery and magic packets
     volumes:
+      - ./config:/app/config
       - ./data:/app/data
+    environment:
+      - UC_CONFIG_HOME=/app/config
+      - UC_DATA_HOME=/app/data
