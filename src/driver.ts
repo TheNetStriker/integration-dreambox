@@ -116,6 +116,10 @@ const remoteCmdHandler: uc.CommandHandler = async function (
 
           for (let i = 0; i < repeat; i++) {
             result = await remoteSendCommand(device, params.command);
+
+            if (result.statusCode != uc.StatusCodes.Ok) {
+              return processDreamboxCommandResult(result);
+            }
           }
         } else {
           console.error("Command argument missing.");
