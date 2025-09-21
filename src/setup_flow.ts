@@ -14,12 +14,22 @@ var setupStep = SetupSteps.INIT;
 var cfgAddDevice: boolean = false;
 var reconfiguredDevice: config.DreamboxDevice | undefined;
 
-function userInputDeviceSettings(): uc.RequestUserInput {
+function userInputDeviceSettings(address: string = "", username: string = ""): uc.RequestUserInput {
   return new uc.RequestUserInput("Setup mode", [
     {
       id: "address",
       label: { en: "Dreambox IP address", de: "Dreambox IP Adresse" },
-      field: { text: { value: "" } }
+      field: { text: { value: address } }
+    },
+    {
+      id: "username",
+      label: { en: "Username", de: "Benutzername" },
+      field: { text: { value: username } }
+    },
+    {
+      id: "password",
+      label: { en: "Password", de: "Passwort" },
+      field: { password: { value: "" } }
     }
   ]);
 }
@@ -150,7 +160,7 @@ async function handleConfigurationMode(
       setupStep = SetupSteps.RECONFIGURE;
       reconfiguredDevice = selectedDevice;
 
-      return userInputDeviceSettings();
+      return userInputDeviceSettings(selectedDevice.address, selectedDevice.username);
     }
     case "reset":
       config.devices.clear(); // triggers device instance removal
@@ -166,11 +176,13 @@ async function handleConfigurationMode(
 
 async function handleDiscovery(msg: uc.UserDataResponse): Promise<uc.SetupComplete | uc.SetupError> {
   const address = msg.inputValues["address"];
+  const username = msg.inputValues["username"];
+  const password = msg.inputValues["password"];
 
   console.debug(`Starting manual driver setup for ${address}`);
 
   try {
-    const deviceInfo = await dreambox.getDreamboxInfo(address);
+    const deviceInfo = await dreambox.getDreamboxInfo(address, username, password);
     const existing = config.devices.get(deviceInfo.entityId);
 
     if (cfgAddDevice && existing) {
@@ -179,7 +191,7 @@ async function handleDiscovery(msg: uc.UserDataResponse): Promise<uc.SetupComple
       return new uc.SetupError(uc.IntegrationSetupError.Other);
     }
 
-    const device = new config.DreamboxDevice(deviceInfo.entityId, deviceInfo.name, address);
+    const device = new config.DreamboxDevice(deviceInfo.entityId, deviceInfo.name, address, username, password);
 
     config.devices.addOrUpdate(device);
 
@@ -197,11 +209,13 @@ async function handleDeviceReconfigure(msg: uc.UserDataResponse): Promise<uc.Set
   }
 
   const address = msg.inputValues["address"];
+  const username = msg.inputValues["username"];
+  const password = msg.inputValues["password"];
 
   console.debug("User has changed configuration");
 
   try {
-    const deviceInfo = await dreambox.getDreamboxInfo(address);
+    const deviceInfo = await dreambox.getDreamboxInfo(address, username, password);
 
     if (deviceInfo.entityId != reconfiguredDevice!.id) {
       console.error(
@@ -211,6 +225,8 @@ async function handleDeviceReconfigure(msg: uc.UserDataResponse): Promise<uc.Set
     }
 
     reconfiguredDevice!.address = msg.inputValues["address"];
+    reconfiguredDevice!.username = msg.inputValues["username"];
+    reconfiguredDevice!.password = msg.inputValues["password"];
     config.devices.update(reconfiguredDevice!);
 
     await new Promise((resolve) => setTimeout(resolve, 1000));

@@ -80,14 +80,28 @@ class DreamboxCommandResult<EntityStateType> {
   }
 }
 
-async function getDreamboxInfo(deviceAddress: string): Promise<DreamboxInfoResult> {
-  const url = `http://${deviceAddress}/web/deviceinfo`;
-  const options = {
+function getFetchOptions(username: string, password: string) {
+  const options: {
+    method: string;
+    headers: { [key: string]: string };
+  } = {
     method: "GET",
     headers: {
       Accept: "application/xml"
     }
   };
+
+  if (username && password) {
+    const token = Buffer.from(`${username}:${password}`).toString("base64");
+    options.headers["Authorization"] = `Basic ${token}`;
+  }
+
+  return options;
+}
+
+async function getDreamboxInfo(deviceAddress: string, username: string, password: string): Promise<DreamboxInfoResult> {
+  const url = `http://${deviceAddress}/web/deviceinfo`;
+  const options = getFetchOptions(username, password);
   return new Promise(function (resolve, reject) {
     fetch(url, options)
       .then(async (response) => {
@@ -111,6 +125,8 @@ async function getDreamboxInfo(deviceAddress: string): Promise<DreamboxInfoResul
 
 async function getDreamboxPromise<StateType>(
   url: string,
+  username: string,
+  password: string,
   entityId: string,
   entityStateType: string,
   xmlRoot: string,
@@ -121,12 +137,7 @@ async function getDreamboxPromise<StateType>(
   positiveEntityState: StateType | undefined,
   negativeEntityState: StateType | undefined
 ): Promise<DreamboxCommandResult<StateType | undefined>> {
-  const options = {
-    method: "GET",
-    headers: {
-      Accept: "application/xml"
-    }
-  };
+  const options = getFetchOptions(username, password);
   return new Promise(function (resolve, reject) {
     fetch(url, options)
       .then(async (response) => {
@@ -166,6 +177,8 @@ const sendRemoteCommand = async function (
   const url = `http://${device.address}/web/remotecontrol?command=${commandId}`;
   return getDreamboxPromise<uc.RemoteStates>(
     url,
+    device.username,
+    device.password,
     device.id,
     uc.RemoteAttributes.State,
     "e2remotecontrol",
@@ -189,6 +202,8 @@ const sendPowerState = async function (
   return getDreamboxPromise<uc.RemoteStates | undefined>(
     url,
     device.id,
+    device.username,
+    device.password,
     uc.RemoteAttributes.State,
     "e2powerstate",
     "e2instandby",
@@ -206,6 +221,8 @@ const getPowerState = async function (
   const url = `http://${device.address}/web/powerstate`;
   return getDreamboxPromise<uc.RemoteStates | undefined>(
     url,
+    device.username,
+    device.password,
     device.id,
     uc.RemoteAttributes.State,
     "e2powerstate",
@@ -246,6 +263,8 @@ const sendDownmixState = async function (
 
   return getDreamboxPromise<uc.SwitchStates | undefined>(
     url,
+    device.username,
+    device.password,
     device.id,
     uc.SwitchAttributes.State,
     "e2simplexmlresult",
@@ -264,6 +283,8 @@ const getDownmixState = async function (
   const url = `http://${device.address}/web/downmix`;
   return getDreamboxPromise<uc.SwitchStates | undefined>(
     url,
+    device.username,
+    device.password,
     device.id,
     uc.SwitchAttributes.State,
     "e2simplexmlresult",

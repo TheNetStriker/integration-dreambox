@@ -4,10 +4,14 @@ services:
     build: ./
     container_name: dreambox-integration
     restart: unless-stopped
-    network_mode: host  # Required for network discovery and magic packets
+    network_mode: host # Required for network discovery and magic packets
     volumes:
       - ./config:/app/config
       - ./data:/app/data
     environment:
       - UC_CONFIG_HOME=/app/config
       - UC_DATA_HOME=/app/data
+      - UC_INTEGRATION_INTERFACE=127.0.0.1
+      - UC_INTEGRATION_HTTP_PORT=9988
+      - UC_DISABLE_MDNS_PUBLISH=false
+      - DEBUG=ucapi:*

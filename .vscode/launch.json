@@ -16,7 +16,8 @@
                 "DEBUG": "ucapi:*",
                 "UC_CONFIG_HOME": "${workspaceFolder}/config",
                 "UC_DATA_HOME": "${workspaceFolder}/data"
-            }
+            },
+            "envFile": "${workspaceFolder}/.env"
           }
     ]
 }

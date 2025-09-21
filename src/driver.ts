@@ -273,9 +273,9 @@ async function main() {
   // load configured devices
   config.devices.init(dataDirPath, onDeviceAdded, onDeviceRemoved);
 
-  config.devices.all().forEach((device) => {
+  for (const device of config.devices.all()) {
     addConfiguredDevice(device);
-  });
+  }
 
   driver.init("driver.json", driverSetupHandler);
 

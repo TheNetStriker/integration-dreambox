@@ -7,17 +7,23 @@ class DreamboxDevice {
   id: string;
   name: string;
   address: string;
+  username: string;
+  password: string;
 
   /**
    * Dreambox device configuration.
    * @param {string} id Unique id of the device.
    * @param {string} name Friendly name of the device.
    * @param {string} address IP address of the device.
+   * @param {string} username username of the device.
+   * @param {string} password password of the device.
    */
-  constructor(id: string, name: string, address: string) {
+  constructor(id: string, name: string, address: string, username: string, password: string) {
     this.id = id;
     this.name = name;
     this.address = address;
+    this.username = username;
+    this.password = password;
   }
 }
 
@@ -175,7 +181,7 @@ class Devices {
       const json = JSON.parse(fs.readFileSync(this.#cfgFilePath, "utf8"));
 
       this.#config = json.map((item: any) => {
-        return new DreamboxDevice(item.id, item.name, item.address);
+        return new DreamboxDevice(item.id, item.name, item.address, item.username, item.password);
       });
       return true;
     } catch (err) {
