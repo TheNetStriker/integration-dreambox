@@ -18,10 +18,6 @@ COPY --from=node-build /usr/src/app/node_modules/ ./node_modules/
 COPY package.json .
 COPY driver.json .
 
-# Create non-root user for security
-RUN useradd -m -u 9999 dreambox && chown -R dreambox:dreambox /app
-USER dreambox
-
 # Expose the integration port (default 9988)
 EXPOSE 9988
 
