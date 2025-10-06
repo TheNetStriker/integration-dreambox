@@ -76,6 +76,8 @@ function remoteSendCommand(
     return dreambox.sendDownmixState(device, uc.RemoteCommands.Off);
   } else if (command == "DOWNMIX_TOGGLE") {
     return dreambox.sendDownmixState(device, uc.RemoteCommands.Toggle);
+  } else if (/^\d+$/.test(command)) {
+    return dreambox.sendRemoteCommand(device, Number(command));
   } else {
     return dreambox.sendRemoteCommand(device, dreambox.RC_DREAMBOX_MAP[command]);
   }
