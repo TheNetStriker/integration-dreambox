@@ -70,16 +70,22 @@ function remoteSendCommand(
   device: config.DreamboxDevice,
   command: string
 ): Promise<dreambox.DreamboxCommandResult<any>> {
-  if (command == "DOWNMIX_ON") {
+  let sendCommand = command
+  let sendLong = false
+  if (sendCommand.includes('_LONG')) {
+    sendLong = true
+    sendCommand = sendCommand.replace('_LONG','')
+  }
+  if (sendCommand == "DOWNMIX_ON") {
     return dreambox.sendDownmixState(device, uc.RemoteCommands.On);
-  } else if (command == "DOWNMIX_OFF") {
+  } else if (sendCommand == "DOWNMIX_OFF") {
     return dreambox.sendDownmixState(device, uc.RemoteCommands.Off);
-  } else if (command == "DOWNMIX_TOGGLE") {
+  } else if (sendCommand == "DOWNMIX_TOGGLE") {
     return dreambox.sendDownmixState(device, uc.RemoteCommands.Toggle);
-  } else if (/^\d+$/.test(command)) {
-    return dreambox.sendRemoteCommand(device, Number(command));
-  } else {
-    return dreambox.sendRemoteCommand(device, dreambox.RC_DREAMBOX_MAP[command]);
+  } else if (dreambox.RC_DREAMBOX_MAP[sendCommand]) {
+    return dreambox.sendRemoteCommand(device, dreambox.RC_DREAMBOX_MAP[sendCommand], sendLong);
+  } else if (/^\d+$/.test(sendCommand)) {
+    return dreambox.sendRemoteCommand(device, Number(sendCommand), sendLong);
   }
 }
 
@@ -156,6 +162,11 @@ const remoteCmdHandler: uc.CommandHandler = async function (
 };
 
 const supportedCommands = Object.keys(dreambox.RC_DREAMBOX_MAP);
+
+// add long press key maps
+for (var key in supportedCommands) {
+        supportedCommands.push(supportedCommands[key]+'_LONG')
+}
 
 supportedCommands.push("DOWNMIX_ON");
 supportedCommands.push("DOWNMIX_OFF");
