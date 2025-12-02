@@ -48,7 +48,7 @@ driver.on(uc.Events.UnsubscribeEntities, async (entityIds: string[]) => {
   });
 });
 
-function processDreamboxCommandResult(result: dreambox.DreamboxCommandResult<any> | null): uc.StatusCodes {
+function processDreamboxCommandResult(result: dreambox.DreamboxCommandResult<any> | undefined): uc.StatusCodes {
   if (result) {
     if (result.entityState) {
       driver.updateEntityAttributes(result.entityId, {
@@ -69,19 +69,28 @@ function processDreamboxCommandResult(result: dreambox.DreamboxCommandResult<any
 function remoteSendCommand(
   device: config.DreamboxDevice,
   command: string
-): Promise<dreambox.DreamboxCommandResult<any>> {
-  let sendCommand = command
-  let sendLong = false
-  if (sendCommand.includes('_LONG')) {
-    sendLong = true
-    sendCommand = sendCommand.replace('_LONG','')
+):
+  | Promise<dreambox.DreamboxCommandResult<uc.SwitchStates | undefined>>
+  | Promise<dreambox.DreamboxCommandResult<uc.RemoteStates | undefined>>
+  | undefined {
+  let sendCommand = command;
+  let sendLong = false;
+  if (sendCommand.includes("_LONG")) {
+    sendLong = true;
+    sendCommand = sendCommand.replace("_LONG", "");
   }
-  if (sendCommand == "DOWNMIX_ON") {
+  if (sendCommand == dreambox.COMMANDS.DOWNMIX_ON) {
     return dreambox.sendDownmixState(device, uc.RemoteCommands.On);
-  } else if (sendCommand == "DOWNMIX_OFF") {
+  } else if (sendCommand == dreambox.COMMANDS.DOWNMIX_OFF) {
     return dreambox.sendDownmixState(device, uc.RemoteCommands.Off);
-  } else if (sendCommand == "DOWNMIX_TOGGLE") {
+  } else if (sendCommand == dreambox.COMMANDS.DOWNMIX_TOGGLE) {
     return dreambox.sendDownmixState(device, uc.RemoteCommands.Toggle);
+  } else if (sendCommand == dreambox.COMMANDS.SHUTDOWN) {
+    return dreambox.sendPowerState(device, dreambox.POWER_STATES.SHUTDOWN);
+  } else if (sendCommand == dreambox.COMMANDS.REBOOT) {
+    return dreambox.sendPowerState(device, dreambox.POWER_STATES.REBOOT);
+  } else if (sendCommand == dreambox.COMMANDS.RESTART_ENIGMA2) {
+    return dreambox.sendPowerState(device, dreambox.POWER_STATES.RESTART_ENIGMA2);
   } else if (dreambox.RC_DREAMBOX_MAP[sendCommand]) {
     return dreambox.sendRemoteCommand(device, dreambox.RC_DREAMBOX_MAP[sendCommand], sendLong);
   } else if (/^\d+$/.test(sendCommand)) {
@@ -107,16 +116,18 @@ const remoteCmdHandler: uc.CommandHandler = async function (
   }
 ): Promise<uc.StatusCodes> {
   let device = configuredDevices.get(entity.id);
-  let result: dreambox.DreamboxCommandResult<any> | null = null;
+  let result: dreambox.DreamboxCommandResult<any> | undefined = undefined;
 
   if (device) {
     switch (cmdId) {
       case uc.RemoteCommands.On:
+        result = await dreambox.sendPowerState(device, dreambox.POWER_STATES.WAKEUP_FROM_STANDBY);
+        break;
       case uc.RemoteCommands.Off:
-        result = await dreambox.sendPowerState(device, cmdId);
+        result = await dreambox.sendPowerState(device, dreambox.POWER_STATES.STANDBY);
         break;
       case uc.RemoteCommands.Toggle:
-        result = await dreambox.sendRemoteCommand(device, dreambox.RC_DREAMBOX_MAP["POWER"]);
+        result = await dreambox.sendRemoteCommand(device, dreambox.RC_DREAMBOX_MAP["POWER"], false);
         break;
       case uc.RemoteCommands.SendCmd: {
         if (params && typeof params.command === "string") {
@@ -125,7 +136,7 @@ const remoteCmdHandler: uc.CommandHandler = async function (
           for (let i = 0; i < repeat; i++) {
             result = await remoteSendCommand(device, params.command);
 
-            if (result.statusCode != uc.StatusCodes.Ok) {
+            if (result && result.statusCode != uc.StatusCodes.Ok) {
               return processDreamboxCommandResult(result);
             }
           }
@@ -142,7 +153,7 @@ const remoteCmdHandler: uc.CommandHandler = async function (
           for (const command of params.sequence) {
             result = await remoteSendCommand(device, command);
 
-            if (result.statusCode != uc.StatusCodes.Ok) {
+            if (result && result.statusCode != uc.StatusCodes.Ok) {
               return processDreamboxCommandResult(result);
             }
 
@@ -165,12 +176,12 @@ const supportedCommands = Object.keys(dreambox.RC_DREAMBOX_MAP);
 
 // add long press key maps
 for (var key in supportedCommands) {
-        supportedCommands.push(supportedCommands[key]+'_LONG')
+  supportedCommands.push(supportedCommands[key] + "_LONG");
 }
 
-supportedCommands.push("DOWNMIX_ON");
-supportedCommands.push("DOWNMIX_OFF");
-supportedCommands.push("DOWNMIX_TOGGLE");
+for (const cmd of Object.values(dreambox.COMMANDS)) {
+  supportedCommands.push(cmd);
+}
 
 const createButtonMappings = () => {
   return [

@@ -48,8 +48,31 @@ const RC_DREAMBOX_MAP: Record<string, number> = {
   EXIT: 1,
   PLAYPAUSE: 164,
   TIMESHIFT: 119,
-  SUBTITLE: 370
+  SUBTITLE: 370,
+  SETTINGS_MENU: 141,
+  TIMER: 359,
+  FAVORITE_BOUQUETS: 364,
+  EPG: 365,
+  PLUGIN_BROWSER: 394
 };
+
+const COMMANDS = {
+  DOWNMIX_ON: "DOWNMIX_ON",
+  DOWNMIX_OFF: "DOWNMIX_OFF",
+  DOWNMIX_TOGGLE: "DOWNMIX_TOGGLE",
+  SHUTDOWN: "SHUTDOWN",
+  REBOOT: "REBOOT",
+  RESTART_ENIGMA2: "RESTART_ENIGMA2"
+} as const;
+
+enum POWER_STATES {
+  TOGGLE_STANDBY = 0,
+  SHUTDOWN = 1,
+  REBOOT = 2,
+  RESTART_ENIGMA2 = 3,
+  WAKEUP_FROM_STANDBY = 4,
+  STANDBY = 5
+}
 
 class DreamboxInfoResult {
   name: string;
@@ -143,7 +166,7 @@ async function getDreamboxPromise<StateType>(
   negativeEntityState: StateType | undefined
 ): Promise<DreamboxCommandResult<StateType | undefined>> {
   const options = getFetchOptions(username, password);
-  return new Promise(function (resolve, reject) {
+  return new Promise(function (resolve) {
     fetch(url, options)
       .then(async (response) => {
         if (response.status == 200) {
@@ -180,7 +203,7 @@ const sendRemoteCommand = async function (
   commandId: number,
   sendLong: boolean
 ): Promise<DreamboxCommandResult<uc.RemoteStates | undefined>> {
-  let longCommand = sendLong ? '&type=long' : ''
+  let longCommand = sendLong ? "&type=long" : "";
   const url = `http://${device.address}/web/remotecontrol?command=${commandId}${longCommand}`;
   return getDreamboxPromise<uc.RemoteStates>(
     url,
@@ -200,10 +223,9 @@ const sendRemoteCommand = async function (
 
 const sendPowerState = async function (
   device: config.DreamboxDevice,
-  remoteCommand: uc.RemoteCommands
+  powerState: POWER_STATES
 ): Promise<DreamboxCommandResult<uc.RemoteStates | undefined>> {
-  const powerStateQueryParamValue = remoteCommand == uc.RemoteCommands.On ? 4 : 5;
-  const url = `http://${device.address}/web/powerstate?newstate=${powerStateQueryParamValue}`;
+  const url = `http://${device.address}/web/powerstate?newstate=${powerState}`;
   // For some reason Dreambox is not always returning the correct standby value when setting power.
   // Ignoring the expected value here.
   return getDreamboxPromise<uc.RemoteStates | undefined>(
@@ -217,7 +239,7 @@ const sendPowerState = async function (
     undefined,
     uc.StatusCodes.Ok,
     uc.StatusCodes.ServerError,
-    remoteCommand == uc.RemoteCommands.On ? uc.RemoteStates.On : uc.RemoteStates.Off,
+    powerState == POWER_STATES.WAKEUP_FROM_STANDBY ? uc.RemoteStates.On : uc.RemoteStates.Off,
     uc.RemoteStates.Unknown
   );
 };
@@ -306,6 +328,8 @@ const getDownmixState = async function (
 
 export {
   RC_DREAMBOX_MAP,
+  COMMANDS,
+  POWER_STATES,
   DreamboxInfoResult,
   DreamboxCommandResult,
   getDreamboxInfo,
