@@ -2,9 +2,72 @@
 
 The driver lets you control multiple Dreambox/Enigma2 devices via network using the Unfolded Circle Remote Two and 3.
 
-## Custom commands
+## Commands
 
-Custom commands can be sent with `SEND COMMAND` or `COMMAND SEQUENCE` by just setting the command number as command parameter.
+### Supported commands
+
+| Name              | Id  |
+| ----------------- | --- |
+| POWER             | 116 |
+| 1                 | 2   |
+| 2                 | 3   |
+| 3                 | 4   |
+| 4                 | 5   |
+| 5                 | 6   |
+| 6                 | 7   |
+| 7                 | 8   |
+| 8                 | 9   |
+| 9                 | 10  |
+| 0                 | 11  |
+| PREVIOUS          | 412 |
+| NEXT              | 407 |
+| VOLUME_UP         | 115 |
+| VOLUME_DOWN       | 114 |
+| MUTE              | 113 |
+| BOUQUET_UP        | 402 |
+| BOUQUET_DOWN      | 403 |
+| BACK              | 174 |
+| INFO              | 358 |
+| CURSOR_UP         | 103 |
+| CURSOR_DOWN       | 108 |
+| CURSOR_LEFT       | 105 |
+| CURSOR_RIGHT      | 106 |
+| MENU              | 139 |
+| OK                | 352 |
+| HELP              | 138 |
+| AUDIO             | 392 |
+| VIDEO             | 393 |
+| RED               | 398 |
+| GREEN             | 399 |
+| YELLOW            | 400 |
+| BLUE              | 401 |
+| REWIND            | 165 |
+| PLAY              | 207 |
+| STOP              | 128 |
+| FORWARD           | 163 |
+| TV                | 377 |
+| RADIO             | 385 |
+| TEXT              | 388 |
+| RECORD            | 167 |
+| EXIT              | 1   |
+| PLAYPAUSE         | 164 |
+| TIMESHIFT         | 119 |
+| SUBTITLE          | 370 |
+| SETTINGS_MENU     | 141 |
+| TIMER             | 359 |
+| FAVORITE_BOUQUETS | 364 |
+| EPG               | 365 |
+| PLUGIN_BROWSER    | 394 |
+
+### Custom commands
+
+Custom commands can be sent with `SEND COMMAND` or `COMMAND SEQUENCE` by just setting the command name or id as the command parameter.
+
+If a command is not listed in the table above, you can add use `SEND COMMAND` with the command id as the parameter. If you would like that the command will be added to the library please create an issue here.
+
+Please note that the numeric commands from 0 to 9 are recognized as the numbers from 0 to 9 and not the actual command id is sent. So for the `EXIT` command you must use the text `EXIT` as the command parameter instead of entering the command id `1`.
+
+Command sequences can be used to switch to a specific channel. For example to switch to channel `123` you can use `1,2,3,OK` as the command sequence parameter.
 
 ## Installation
 
